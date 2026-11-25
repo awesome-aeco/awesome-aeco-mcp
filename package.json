@@ -1,0 +1,59 @@
+{
+  "name": "awesome-aeco-mcp",
+  "version": "0.1.0",
+  "description": "Model Context Protocol (MCP) server for querying curated open-source AECO (Architecture, Engineering, Construction & Operations) tools from Awesome AECO.",
+  "license": "MIT",
+  "type": "module",
+  "homepage": "https://awesome-aeco.github.io/ai/",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/awesome-aeco/awesome-aeco-mcp.git"
+  },
+  "bugs": {
+    "url": "https://github.com/awesome-aeco/awesome-aeco-mcp/issues"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "aeco",
+    "bim",
+    "ifc",
+    "cad",
+    "openbim",
+    "architecture",
+    "engineering",
+    "construction",
+    "awesome-aeco"
+  ],
+  "bin": {
+    "awesome-aeco-mcp": "./dist/stdio.js"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json && chmod +x dist/stdio.js",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "dev:stdio": "tsx src/stdio.ts",
+    "dev:worker": "wrangler dev",
+    "deploy:worker": "wrangler deploy"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.25.0",
+    "zod": "^3.24.0"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^5.20261123.1",
+    "@types/node": "^22.0.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.8.0",
+    "vitest": "^3.1.0",
+    "wrangler": "^4.14.0"
+  }
+}
