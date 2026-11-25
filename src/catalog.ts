@@ -1,7 +1,7 @@
 import type { Catalog } from "./types.js";
 
 export const DEFAULT_CATALOG_URL =
-  "https://awesome-aeco.github.io/data/catalog.json";
+  "https://awesome-aeco.org/data/catalog.json";
 export const DEFAULT_CACHE_TTL_MS = 15 * 60 * 1000; // 15 minutes
 
 export interface CatalogClientOptions {

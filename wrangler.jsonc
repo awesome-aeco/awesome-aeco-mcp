@@ -10,7 +10,13 @@
       "enabled": true
     }
   },
+  "routes": [
+    {
+      "pattern": "mcp.awesome-aeco.org",
+      "custom_domain": true
+    }
+  ],
   "vars": {
-    "CATALOG_URL": "https://awesome-aeco.github.io/data/catalog.json"
+    "CATALOG_URL": "https://awesome-aeco.org/data/catalog.json"
   }
 }

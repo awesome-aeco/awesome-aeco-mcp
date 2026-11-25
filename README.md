@@ -1,8 +1,8 @@
 # awesome-aeco-mcp
 
-Model Context Protocol (MCP) server for querying curated open-source tools from [Awesome AECO](https://awesome-aeco.github.io/) (Architecture, Engineering, Construction & Operations).
+Model Context Protocol (MCP) server for querying curated open-source tools from [Awesome AECO](https://awesome-aeco.org/) (Architecture, Engineering, Construction & Operations).
 
-Backed by the live [`catalog.json`](https://awesome-aeco.github.io/data/catalog.json) endpoint (enriched automatically with GitHub stars, star deltas, languages, SPDX licenses, topics, archived status, and inferred AECO/openBIM tags).
+Backed by the live [`catalog.json`](https://awesome-aeco.org/data/catalog.json) endpoint (enriched automatically with GitHub stars, star deltas, languages, SPDX licenses, topics, archived status, and inferred AECO/openBIM tags).
 
 ## Tools
 
@@ -31,15 +31,15 @@ Add to your MCP client configuration (Claude Desktop, Cursor, VS Code, Windsurf,
 
 ### Environment Variables
 
-- `AWESOME_AECO_CATALOG_URL`: Optional override for the catalog JSON URL (defaults to `https://awesome-aeco.github.io/data/catalog.json`).
+- `AWESOME_AECO_CATALOG_URL`: Optional override for the catalog JSON URL (defaults to `https://awesome-aeco.org/data/catalog.json`).
 
 ## Remote MCP (Cloudflare Worker)
 
 A hosted stateless Streamable HTTP MCP server is live at:
 
-- **MCP Endpoint:** `https://awesome-aeco-mcp.eng-superosama.workers.dev/mcp`
-- **Service Info:** `https://awesome-aeco-mcp.eng-superosama.workers.dev/`
-- **Health Check:** `https://awesome-aeco-mcp.eng-superosama.workers.dev/health`
+- **MCP Endpoint:** `https://mcp.awesome-aeco.org/mcp`
+- **Service Info:** `https://mcp.awesome-aeco.org/`
+- **Health Check:** `https://mcp.awesome-aeco.org/health`
 
 Example remote MCP client configuration:
 
@@ -47,7 +47,7 @@ Example remote MCP client configuration:
 {
   "mcpServers": {
     "awesome-aeco": {
-      "url": "https://awesome-aeco-mcp.eng-superosama.workers.dev/mcp"
+      "url": "https://mcp.awesome-aeco.org/mcp"
     }
   }
 }

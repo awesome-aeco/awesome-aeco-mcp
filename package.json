@@ -1,10 +1,11 @@
 {
   "name": "awesome-aeco-mcp",
-  "version": "0.1.0",
+  "mcpName": "io.github.awesome-aeco/awesome-aeco-mcp",
+  "version": "0.1.1",
   "description": "Model Context Protocol (MCP) server for querying curated open-source AECO (Architecture, Engineering, Construction & Operations) tools from Awesome AECO.",
   "license": "MIT",
   "type": "module",
-  "homepage": "https://awesome-aeco.github.io/ai/",
+  "homepage": "https://awesome-aeco.org/ai/",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/awesome-aeco/awesome-aeco-mcp.git"

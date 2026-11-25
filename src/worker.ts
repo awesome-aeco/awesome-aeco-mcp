@@ -73,7 +73,7 @@ export default {
             "Remote Model Context Protocol (MCP) server for Awesome AECO.",
           mcp_endpoint: `${url.origin}/mcp`,
           catalog_url: env.CATALOG_URL ?? DEFAULT_CATALOG_URL,
-          docs: "https://awesome-aeco.github.io/ai/",
+          docs: "https://awesome-aeco.org/ai/",
           repository: "https://github.com/awesome-aeco/awesome-aeco-mcp",
         })
       );
