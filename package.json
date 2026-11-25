@@ -7,7 +7,7 @@
   "homepage": "https://awesome-aeco.github.io/ai/",
   "repository": {
     "type": "git",
-    "url": "https://github.com/awesome-aeco/awesome-aeco-mcp.git"
+    "url": "git+https://github.com/awesome-aeco/awesome-aeco-mcp.git"
   },
   "bugs": {
     "url": "https://github.com/awesome-aeco/awesome-aeco-mcp/issues"
@@ -26,7 +26,7 @@
     "awesome-aeco"
   ],
   "bin": {
-    "awesome-aeco-mcp": "./dist/stdio.js"
+    "awesome-aeco-mcp": "dist/stdio.js"
   },
   "files": [
     "dist",
