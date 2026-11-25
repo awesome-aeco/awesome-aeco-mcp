@@ -35,11 +35,23 @@ Add to your MCP client configuration (Claude Desktop, Cursor, VS Code, Windsurf,
 
 ## Remote MCP (Cloudflare Worker)
 
-This repository also includes a stateless Streamable HTTP MCP endpoint for Cloudflare Workers (`src/worker.ts`):
+A hosted stateless Streamable HTTP MCP server is live at:
 
-- `POST /mcp` — Stateless Streamable HTTP MCP JSON-RPC endpoint
-- `GET /` — Service metadata
-- `GET /health` — Health check
+- **MCP Endpoint:** `https://awesome-aeco-mcp.eng-superosama.workers.dev/mcp`
+- **Service Info:** `https://awesome-aeco-mcp.eng-superosama.workers.dev/`
+- **Health Check:** `https://awesome-aeco-mcp.eng-superosama.workers.dev/health`
+
+Example remote MCP client configuration:
+
+```json
+{
+  "mcpServers": {
+    "awesome-aeco": {
+      "url": "https://awesome-aeco-mcp.eng-superosama.workers.dev/mcp"
+    }
+  }
+}
+```
 
 ### Deploy Your Own Worker
 
