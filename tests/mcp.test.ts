@@ -34,6 +34,12 @@ describe("MCP server tools (InMemoryTransport)", () => {
       "list_tags",
       "search_tools",
     ]);
+    for (const tool of tools) {
+      expect(tool.title).toBeTruthy();
+      expect(tool.annotations?.title).toBeTruthy();
+      expect(tool.annotations?.readOnlyHint).toBe(true);
+      expect(tool.annotations?.destructiveHint).toBe(false);
+    }
 
     const searchRes = await client.callTool({
       name: "search_tools",

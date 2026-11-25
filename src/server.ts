@@ -108,61 +108,68 @@ export function createAwesomeAecoServer(
     version: SERVER_VERSION,
   });
 
-  server.tool(
+  server.registerTool(
     "search_tools",
-    "Search and filter curated open-source AECO (Architecture, Engineering, Construction & Operations) tools from Awesome AECO by keyword, category, domain/standard tag (e.g. IFC, IDS, BCF, CityGML, MCP, Revit, Energy), programming language, or license.",
     {
-      query: z
-        .string()
-        .optional()
-        .describe(
-          "Free-text search across tool name, description, tags, and GitHub topics (e.g. 'ifc geometry python' or 'energy simulation')."
-        ),
-      category: z
-        .string()
-        .optional()
-        .describe(
-          "Filter by category name or substring (e.g. 'BIM', 'Simulation', 'AI', 'GIS'). Call list_categories to see all categories."
-        ),
-      tag: z
-        .string()
-        .optional()
-        .describe(
-          "Filter by standard or domain tag (e.g. 'IFC', 'MCP', 'BIM', 'Revit', 'Energy', 'CityGML', 'IDS', 'BCF'). Call list_tags to see all tags."
-        ),
-      language: z
-        .string()
-        .optional()
-        .describe(
-          "Filter by primary GitHub language (exact, case-insensitive, e.g. 'Python', 'TypeScript', 'C++', 'C#', 'Rust')."
-        ),
-      license: z
-        .string()
-        .optional()
-        .describe(
-          "Filter by SPDX license substring (case-insensitive, e.g. 'MIT', 'Apache-2.0', 'LGPL', 'GPL')."
-        ),
-      exclude_archived: z
-        .boolean()
-        .optional()
-        .default(true)
-        .describe("Exclude archived GitHub repositories (default: true)."),
-      sort: z
-        .enum(["relevance", "stars", "recent", "name"])
-        .optional()
-        .describe(
-          "Sort order: 'relevance' (default when query is provided), 'stars' (default otherwise), 'recent' (by last push), or 'name'."
-        ),
-      limit: z
-        .number()
-        .int()
-        .min(1)
-        .max(50)
-        .optional()
-        .default(20)
-        .describe("Maximum number of tools to return (1–50, default: 20)."),
+      title: "Search AECO Tools",
+      description:
+        "Search and filter curated open-source AECO (Architecture, Engineering, Construction & Operations) tools from Awesome AECO by keyword, category, domain/standard tag (e.g. IFC, IDS, BCF, CityGML, MCP, Revit, Energy), programming language, or license.",
+      inputSchema: {
+        query: z
+          .string()
+          .optional()
+          .describe(
+            "Free-text search across tool name, description, tags, and GitHub topics (e.g. 'ifc geometry python' or 'energy simulation')."
+          ),
+        category: z
+          .string()
+          .optional()
+          .describe(
+            "Filter by category name or substring (e.g. 'BIM', 'Simulation', 'AI', 'GIS'). Call list_categories to see all categories."
+          ),
+        tag: z
+          .string()
+          .optional()
+          .describe(
+            "Filter by standard or domain tag (e.g. 'IFC', 'MCP', 'BIM', 'Revit', 'Energy', 'CityGML', 'IDS', 'BCF'). Call list_tags to see all tags."
+          ),
+        language: z
+          .string()
+          .optional()
+          .describe(
+            "Filter by primary GitHub language (exact, case-insensitive, e.g. 'Python', 'TypeScript', 'C++', 'C#', 'Rust')."
+          ),
+        license: z
+          .string()
+          .optional()
+          .describe(
+            "Filter by SPDX license substring (case-insensitive, e.g. 'MIT', 'Apache-2.0', 'LGPL', 'GPL')."
+          ),
+        exclude_archived: z
+          .boolean()
+          .optional()
+          .default(true)
+          .describe("Exclude archived GitHub repositories (default: true)."),
+        sort: z
+          .enum(["relevance", "stars", "recent", "name"])
+          .optional()
+          .describe(
+            "Sort order: 'relevance' (default when query is provided), 'stars' (default otherwise), 'recent' (by last push), or 'name'."
+          ),
+        limit: z
+          .number()
+          .int()
+          .min(1)
+          .max(50)
+          .optional()
+          .default(20)
+          .describe("Maximum number of tools to return (1–50, default: 20)."),
+      },
+      annotations: {
+        ...READ_ONLY_ANNOTATIONS,
+        title: "Search AECO Tools",
+      },
     },
-    READ_ONLY_ANNOTATIONS,
     async (args) => {
       const catalog = await client.getCatalog();
       const result = searchTools(catalog, args);
@@ -187,18 +194,25 @@ export function createAwesomeAecoServer(
     }
   );
 
-  server.tool(
+  server.registerTool(
     "get_tool",
-    "Get full details and GitHub metadata for a specific tool in Awesome AECO by its id, name, or GitHub owner/repo.",
     {
-      identifier: z
-        .string()
-        .min(1)
-        .describe(
-          "Tool id (e.g. 'ifcopenshell'), name (e.g. 'IfcOpenShell'), or GitHub repo (e.g. 'IfcOpenShell/IfcOpenShell')."
-        ),
+      title: "Get AECO Tool Details",
+      description:
+        "Get full details and GitHub metadata for a specific tool in Awesome AECO by its id, name, or GitHub owner/repo.",
+      inputSchema: {
+        identifier: z
+          .string()
+          .min(1)
+          .describe(
+            "Tool id (e.g. 'ifcopenshell'), name (e.g. 'IfcOpenShell'), or GitHub repo (e.g. 'IfcOpenShell/IfcOpenShell')."
+          ),
+      },
+      annotations: {
+        ...READ_ONLY_ANNOTATIONS,
+        title: "Get AECO Tool Details",
+      },
     },
-    READ_ONLY_ANNOTATIONS,
     async ({ identifier }) => {
       const catalog = await client.getCatalog();
       const entry = getTool(catalog, identifier);
@@ -220,11 +234,18 @@ export function createAwesomeAecoServer(
     }
   );
 
-  server.tool(
+  server.registerTool(
     "list_categories",
-    "List all categories in Awesome AECO along with entry counts and top domain tags.",
-    {},
-    READ_ONLY_ANNOTATIONS,
+    {
+      title: "List AECO Categories",
+      description:
+        "List all categories in Awesome AECO along with entry counts and top domain tags.",
+      inputSchema: {},
+      annotations: {
+        ...READ_ONLY_ANNOTATIONS,
+        title: "List AECO Categories",
+      },
+    },
     async () => {
       const catalog = await client.getCatalog();
       const categories = listCategories(catalog);
@@ -245,11 +266,18 @@ export function createAwesomeAecoServer(
     }
   );
 
-  server.tool(
+  server.registerTool(
     "list_tags",
-    "List available domain/standard tags, programming languages, and SPDX licenses in Awesome AECO with entry counts.",
-    {},
-    READ_ONLY_ANNOTATIONS,
+    {
+      title: "List AECO Tags & Licenses",
+      description:
+        "List available domain/standard tags, programming languages, and SPDX licenses in Awesome AECO with entry counts.",
+      inputSchema: {},
+      annotations: {
+        ...READ_ONLY_ANNOTATIONS,
+        title: "List AECO Tags & Licenses",
+      },
+    },
     async () => {
       const catalog = await client.getCatalog();
       const { tags, languages, licenses } = listTags(catalog);
@@ -274,24 +302,31 @@ export function createAwesomeAecoServer(
     }
   );
 
-  server.tool(
+  server.registerTool(
     "get_movers",
-    "Get fastest-growing repositories (by weekly star delta), newly added tools, and recently active repositories in Awesome AECO.",
     {
-      limit: z
-        .number()
-        .int()
-        .min(1)
-        .max(30)
-        .optional()
-        .default(10)
-        .describe("Maximum number of entries per section (1–30, default: 10)."),
-      category: z
-        .string()
-        .optional()
-        .describe("Optional category substring filter (e.g. 'BIM', 'AI')."),
+      title: "Get Awesome AECO Movers",
+      description:
+        "Get fastest-growing repositories (by weekly star delta), newly added tools, and recently active repositories in Awesome AECO.",
+      inputSchema: {
+        limit: z
+          .number()
+          .int()
+          .min(1)
+          .max(30)
+          .optional()
+          .default(10)
+          .describe("Maximum number of entries per section (1–30, default: 10)."),
+        category: z
+          .string()
+          .optional()
+          .describe("Optional category substring filter (e.g. 'BIM', 'AI')."),
+      },
+      annotations: {
+        ...READ_ONLY_ANNOTATIONS,
+        title: "Get Awesome AECO Movers",
+      },
     },
-    READ_ONLY_ANNOTATIONS,
     async (args) => {
       const catalog = await client.getCatalog();
       const movers = getMovers(catalog, args);
