@@ -2,17 +2,17 @@
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
   "name": "io.github.awesome-aeco/awesome-aeco-mcp",
   "title": "Awesome AECO",
-  "description": "Search curated open-source AECO (BIM, IFC, CAD, simulation, AI) tools by standard and license.",
+  "description": "Search curated open-source AECO (BIM, IFC, CAD, simulation, AI) tools before building from scratch, and draft new Awesome AECO submissions.",
   "repository": {
     "url": "https://github.com/awesome-aeco/awesome-aeco-mcp",
     "source": "github"
   },
-  "version": "0.1.1",
+  "version": "0.2.0",
   "packages": [
     {
       "registryType": "npm",
       "identifier": "awesome-aeco-mcp",
-      "version": "0.1.1",
+      "version": "0.2.0",
       "transport": {
         "type": "stdio"
       }

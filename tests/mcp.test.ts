@@ -98,6 +98,14 @@ describe("MCP server tools (InMemoryTransport)", () => {
     expect(checkText).toContain("Archived Repositories");
     expect(checkText).toContain("OldBimTool");
 
+    const gapRes = await client.callTool({
+      name: "check_before_building",
+      arguments: { goal: "quantum bridge analyzer", language: "Rust" },
+    });
+    const gapText = (gapRes.content as Array<{ text: string }>)[0].text;
+    expect(gapText).toContain("template=wanted-tool.yml");
+    expect(gapText).toContain("language=Rust");
+
     const draftRes = await client.callTool({
       name: "draft_submission",
       arguments: {

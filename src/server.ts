@@ -13,7 +13,7 @@ import {
 import type { CatalogEntry } from "./types.js";
 
 export const SERVER_NAME = "awesome-aeco-mcp";
-export const SERVER_VERSION = "0.1.1";
+export const SERVER_VERSION = "0.2.0";
 
 const READ_ONLY_ANNOTATIONS = {
   readOnlyHint: true,
@@ -452,6 +452,19 @@ export function createAwesomeAecoServer(
       ) {
         sections.push(
           "No existing maintained library found in Awesome AECO for this goal."
+        );
+        sections.push("");
+      }
+
+      if (result.exact_matches.length === 0) {
+        const gapParams = new URLSearchParams({
+          template: "wanted-tool.yml",
+          title: `[Wanted] ${result.goal}`,
+          goal: result.goal,
+        });
+        if (args.language) gapParams.set("language", args.language);
+        sections.push(
+          `Log this gap for the community: https://github.com/awesome-aeco/Awesome-AECO/issues/new?${gapParams.toString()}`
         );
         sections.push("");
       }
