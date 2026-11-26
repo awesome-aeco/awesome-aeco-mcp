@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
+  checkBeforeBuilding,
+  draftSubmission,
   getMovers,
   getTool,
   listCategories,
@@ -199,5 +201,47 @@ describe("query helpers", () => {
     expect(movers.new_entries.map((e) => e.id)).toEqual(["idfkit-mcp"]);
     expect(movers.recently_updated[0].id).toBe("idfkit-mcp");
     expect(movers.archived_count).toBe(1);
+  });
+
+  it("groups exact, adjacent, and archived matches in checkBeforeBuilding", () => {
+    const res = checkBeforeBuilding(SAMPLE_CATALOG, {
+      goal: "build an IFC geometry parser",
+      language: "Python",
+    });
+    expect(res.exact_matches).toEqual([]);
+    expect(res.adjacent_matches.map((e) => e.id)).toContain("ifcopenshell");
+    expect(res.archived_matches.map((e) => e.id)).toEqual(["old-bim-tool"]);
+
+    const cppRes = checkBeforeBuilding(SAMPLE_CATALOG, {
+      goal: "IFC geometry",
+      language: "C++",
+    });
+    expect(cppRes.exact_matches.map((e) => e.id)).toEqual(["ifcopenshell"]);
+  });
+
+  it("detects duplicates and builds pre-filled Issue Form URLs in draftSubmission", () => {
+    const dup = draftSubmission(SAMPLE_CATALOG, {
+      name: "IfcOpenShell",
+      github_url: "https://github.com/IfcOpenShell/IfcOpenShell",
+      category: "BIM (Building Information Modeling)",
+      description: "IFC toolkit.",
+    });
+    expect(dup.duplicate?.id).toBe("ifcopenshell");
+
+    const fresh = draftSubmission(SAMPLE_CATALOG, {
+      name: "NewAecoTool",
+      github_url: "https://github.com/acme/new-aeco-tool/",
+      website_url: "https://www.newaeco.dev/",
+      category: "BIM (Building Information Modeling)",
+      description: "Open-source IFC checker for web apps",
+      is_author: true,
+    });
+    expect(fresh.duplicate).toBeNull();
+    expect(fresh.warnings).toEqual([]);
+    expect(fresh.issue_form_url).toContain("template=suggest-resource.yml");
+    expect(fresh.issue_form_url).toContain("name=NewAecoTool");
+    expect(fresh.markdown_entry).toBe(
+      "- **NewAecoTool**\n  Open-source IFC checker for web apps.\n  *Website: [newaeco.dev](https://www.newaeco.dev/) · GitHub: [acme/new-aeco-tool](https://github.com/acme/new-aeco-tool)*"
+    );
   });
 });

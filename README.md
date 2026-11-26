@@ -9,10 +9,26 @@ Backed by the live [`catalog.json`](https://awesome-aeco.org/data/catalog.json) 
 | Tool | Description |
 | --- | --- |
 | `search_tools` | Search and filter AECO tools by keyword, `category`, `tag` (e.g. `IFC`, `IDS`, `BCF`, `CityGML`, `MCP`, `Revit`), `language`, `license`, `exclude_archived`, and `sort` (`relevance`, `stars`, `recent`, `name`). |
+| `check_before_building` | Check Awesome AECO for maintained open-source libraries before building a new AECO tool from scratch, grouped into direct matches, adjacent options in other languages/licenses, and archived repos to avoid. |
+| `draft_submission` | Check Awesome AECO for duplicates and generate a 1-click pre-filled GitHub Issue Form URL (which auto-opens a PR) plus the formatted 3-line Markdown entry. |
 | `get_tool` | Get full details and GitHub metadata for a specific tool by `id`, `name`, or `owner/repo`. |
 | `list_categories` | List all AECO categories with entry counts and top tags. |
 | `list_tags` | List available domain/standard tags, programming languages, and licenses with entry counts. |
 | `get_movers` | Get fastest-growing repositories (weekly star delta), newly added tools, and recently updated repositories. |
+
+## Prompts
+
+| Prompt | Description |
+| --- | --- |
+| `find-or-build-aeco-tool` | One-click workflow for MCP clients (`/` menu) to check Awesome AECO before building a new AECO utility and draft a submission if you publish something new. |
+| `add-after-you-build` | Release-time workflow to inspect a newly built AECO repository, check for duplicates, and generate a 1-click submission link. |
+
+## Resources (Agent Skills)
+
+| URI | Description |
+| --- | --- |
+| `awesome-aeco://skills/awesome-aeco` | Check-before-you-build and catalog lookup skill instructions (`skills/awesome-aeco/SKILL.md`). |
+| `awesome-aeco://skills/add-after-you-build` | Release-time submission skill instructions (`skills/add-after-you-build/SKILL.md`). |
 
 ## Quick Start (Local stdio via `npx`)
 

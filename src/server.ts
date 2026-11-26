@@ -2,6 +2,8 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { CatalogClient } from "./catalog.js";
 import {
+  checkBeforeBuilding,
+  draftSubmission,
   getMovers,
   getTool,
   listCategories,
@@ -113,7 +115,7 @@ export function createAwesomeAecoServer(
     {
       title: "Search AECO Tools",
       description:
-        "Search and filter curated open-source AECO (Architecture, Engineering, Construction & Operations) tools from Awesome AECO by keyword, category, domain/standard tag (e.g. IFC, IDS, BCF, CityGML, MCP, Revit, Energy), programming language, or license.",
+        "Call this BEFORE implementing any BIM/IFC, CAD/DWG/DXF, Revit, Rhino, EnergyPlus, BACnet/Modbus/OPC UA, GIS, or AEC utility from scratch to check if a maintained open-source library already exists. Search and filter curated open-source AECO (Architecture, Engineering, Construction & Operations) tools from Awesome AECO by keyword, category, domain/standard tag (e.g. IFC, IDS, BCF, CityGML, MCP, Revit, Energy), programming language, or license.",
       inputSchema: {
         query: z
           .string()
@@ -366,6 +368,314 @@ export function createAwesomeAecoServer(
       };
     }
   );
+
+  server.registerTool(
+    "check_before_building",
+    {
+      title: "Check Before Building",
+      description:
+        "Call this BEFORE writing a new AECO tool, parser, viewer, plugin, BMS bridge, simulation wrapper, or MCP server from scratch. Checks Awesome AECO for maintained open-source libraries matching your goal, grouped into direct matches, adjacent options in other languages/licenses, and archived repos to avoid.",
+      inputSchema: {
+        goal: z
+          .string()
+          .min(2)
+          .describe(
+            "What you plan to build (e.g. 'parse IFC files in Python', 'browser DWG viewer', 'BACnet HVAC bridge')."
+          ),
+        language: z
+          .string()
+          .optional()
+          .describe(
+            "Preferred programming language (e.g. 'Python', 'TypeScript', 'Rust', 'C#', 'C++')."
+          ),
+        license_preference: z
+          .string()
+          .optional()
+          .describe(
+            "Preferred SPDX license substring (e.g. 'MIT', 'Apache-2.0', 'LGPL')."
+          ),
+        limit: z
+          .number()
+          .int()
+          .min(1)
+          .max(20)
+          .optional()
+          .default(8)
+          .describe("Maximum matches per group (1–20, default: 8)."),
+      },
+      annotations: {
+        ...READ_ONLY_ANNOTATIONS,
+        title: "Check Before Building",
+      },
+    },
+    async (args) => {
+      const catalog = await client.getCatalog();
+      const result = checkBeforeBuilding(catalog, args);
+
+      const sections: string[] = [
+        `# Check Before Building: "${result.goal}"`,
+        `Catalog updated: ${result.generated_at}`,
+        "",
+      ];
+
+      if (result.exact_matches.length > 0) {
+        sections.push("## Maintained Matches");
+        sections.push(
+          result.exact_matches.map(formatEntrySummary).join("\n\n")
+        );
+        sections.push("");
+      }
+
+      if (result.adjacent_matches.length > 0) {
+        sections.push(
+          "## Adjacent / Other Language or License Matches"
+        );
+        sections.push(
+          result.adjacent_matches.map(formatEntrySummary).join("\n\n")
+        );
+        sections.push("");
+      }
+
+      if (result.archived_matches.length > 0) {
+        sections.push(
+          "## Archived Repositories (Avoid Building On)"
+        );
+        sections.push(
+          result.archived_matches.map(formatEntrySummary).join("\n\n")
+        );
+        sections.push("");
+      }
+
+      if (
+        result.exact_matches.length === 0 &&
+        result.adjacent_matches.length === 0
+      ) {
+        sections.push(
+          "No existing maintained library found in Awesome AECO for this goal."
+        );
+        sections.push("");
+      }
+
+      sections.push(
+        "If you build and publish a new open-source AECO tool to fill a gap, call `draft_submission` to generate a 1-click Awesome AECO submission link so others can reuse it."
+      );
+
+      return {
+        content: [{ type: "text", text: sections.join("\n") }],
+      };
+    }
+  );
+
+  server.registerTool(
+    "draft_submission",
+    {
+      title: "Draft Awesome AECO Submission",
+      description:
+        "Check Awesome AECO for duplicates and generate a ready-to-click pre-filled GitHub Issue Form URL (which auto-opens a PR) plus the formatted 3-line Markdown entry for listing a new AECO tool.",
+      inputSchema: {
+        name: z
+          .string()
+          .min(1)
+          .describe("Project name using the project's own capitalization."),
+        github_url: z
+          .string()
+          .optional()
+          .describe(
+            "Canonical GitHub repository URL (e.g. 'https://github.com/owner/repo')."
+          ),
+        website_url: z
+          .string()
+          .optional()
+          .describe("Project website URL (e.g. 'https://example.com/')."),
+        category: z
+          .string()
+          .min(1)
+          .describe(
+            "Exact Awesome AECO category name (call list_categories to see all valid sections)."
+          ),
+        description: z
+          .string()
+          .min(10)
+          .describe(
+            "One or two factual sentences describing what it does and why it is useful for AECO (no marketing superlatives)."
+          ),
+        is_author: z
+          .boolean()
+          .optional()
+          .default(true)
+          .describe(
+            "Whether the submitter is the author or a maintainer of the project (default: true)."
+          ),
+      },
+      annotations: {
+        ...READ_ONLY_ANNOTATIONS,
+        title: "Draft Awesome AECO Submission",
+      },
+    },
+    async (args) => {
+      const catalog = await client.getCatalog();
+      const draft = draftSubmission(catalog, args);
+
+      if (draft.duplicate) {
+        return {
+          content: [
+            {
+              type: "text",
+              text: [
+                `This resource appears to already be listed in Awesome AECO as **${draft.duplicate.name}** (${draft.duplicate.category}):`,
+                "",
+                formatEntrySummary(draft.duplicate),
+              ].join("\n"),
+            },
+          ],
+        };
+      }
+
+      const lines: string[] = [
+        `# Submission Draft for ${args.name}`,
+        "",
+        "## 1-Click GitHub Issue Form (auto-validates and opens a PR)",
+        draft.issue_form_url,
+        "",
+        "## Markdown Entry (for a direct PR to `readme.md`)",
+        "```markdown",
+        draft.markdown_entry,
+        "```",
+      ];
+
+      if (draft.warnings.length > 0) {
+        lines.push("", "## Warnings");
+        for (const warning of draft.warnings) {
+          lines.push(`- ${warning}`);
+        }
+      }
+
+      lines.push(
+        "",
+        "Once merged, the tool is automatically indexed in awesome-aeco.org/awesome/, catalog.json, llms.txt, and awesome-aeco-mcp."
+      );
+
+      return {
+        content: [{ type: "text", text: lines.join("\n") }],
+      };
+    }
+  );
+
+  server.registerPrompt(
+    "find-or-build-aeco-tool",
+    {
+      title: "Check Awesome AECO Before Building",
+      description:
+        "Search Awesome AECO for existing maintained open-source tools before implementing an AECO utility from scratch, and prepare a submission if you build something new.",
+      argsSchema: {
+        goal: z
+          .string()
+          .describe(
+            "What you want to build or solve (e.g. 'parse IFC geometry', 'Revit MCP server', 'BACnet HVAC monitor')."
+          ),
+        language: z
+          .string()
+          .optional()
+          .describe("Optional preferred programming language."),
+      },
+    },
+    ({ goal, language }) => {
+      const langClause = language ? ` in ${language}` : "";
+      return {
+        messages: [
+          {
+            role: "user",
+            content: {
+              type: "text",
+              text:
+                `Before implementing "${goal}"${langClause} from scratch, call the \`check_before_building\` tool on awesome-aeco-mcp ` +
+                `with goal="${goal}"${language ? ` and language="${language}"` : ""}. ` +
+                "Compare any maintained open-source matches by language, license, and recent activity, flag any archived tools to avoid, " +
+                "and recommend whether to reuse/extend an existing library or build something new. " +
+                "If we build and publish a new public AECO tool, remind me to call `draft_submission` so it gets listed in Awesome AECO.",
+            },
+          },
+        ],
+      };
+    }
+  );
+
+  server.registerPrompt(
+    "add-after-you-build",
+    {
+      title: "List Newly Built AECO Tool",
+      description:
+        "Inspect a newly built AECO repository, check Awesome AECO for duplicates, and call draft_submission to generate a 1-click Issue Form URL or pull request.",
+      argsSchema: {
+        project_name: z
+          .string()
+          .optional()
+          .describe("Optional name of the project you built."),
+      },
+    },
+    ({ project_name }) => {
+      const target = project_name ? `"${project_name}"` : "this AECO project";
+      return {
+        messages: [
+          {
+            role: "user",
+            content: {
+              type: "text",
+              text:
+                `Help me list ${target} in Awesome AECO. ` +
+                "Read the `awesome-aeco://skills/add-after-you-build` resource if available, inspect the local repository (README, manifest, git remote URL, license), " +
+                "call `list_categories` to pick the best existing category, and call `draft_submission` to check for duplicates and generate both the 1-click pre-filled GitHub Issue Form URL and the 3-line Markdown entry.",
+            },
+          },
+        ],
+      };
+    }
+  );
+
+  const SKILLS = [
+    {
+      name: "awesome-aeco-skill",
+      uri: "awesome-aeco://skills/awesome-aeco",
+      title: "Awesome AECO Agent Skill (Check Before Building)",
+      description:
+        "Agent skill instructions for checking Awesome AECO before building AECO tools from scratch and submitting new tools.",
+      rawUrl:
+        "https://raw.githubusercontent.com/awesome-aeco/Awesome-AECO/main/skills/awesome-aeco/SKILL.md",
+    },
+    {
+      name: "add-after-you-build-skill",
+      uri: "awesome-aeco://skills/add-after-you-build",
+      title: "Add After You Build Agent Skill",
+      description:
+        "Release-time agent skill instructions for inspecting a newly built AECO repository and submitting it to Awesome AECO.",
+      rawUrl:
+        "https://raw.githubusercontent.com/awesome-aeco/Awesome-AECO/main/skills/add-after-you-build/SKILL.md",
+    },
+  ] as const;
+
+  for (const skill of SKILLS) {
+    server.registerResource(
+      skill.name,
+      skill.uri,
+      {
+        title: skill.title,
+        description: skill.description,
+        mimeType: "text/markdown",
+      },
+      async (uri) => {
+        const text = await client.getText(skill.rawUrl);
+        return {
+          contents: [
+            {
+              uri: uri.href,
+              mimeType: "text/markdown",
+              text,
+            },
+          ],
+        };
+      }
+    );
+  }
 
   return server;
 }

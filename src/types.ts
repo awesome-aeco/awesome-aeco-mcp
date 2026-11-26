@@ -91,3 +91,34 @@ export interface MoversResult {
   recently_updated: CatalogEntry[];
   archived_count: number;
 }
+
+export interface CheckBeforeBuildingOptions {
+  goal: string;
+  language?: string;
+  license_preference?: string;
+  limit?: number;
+}
+
+export interface CheckBeforeBuildingResult {
+  goal: string;
+  generated_at: string;
+  exact_matches: CatalogEntry[];
+  adjacent_matches: CatalogEntry[];
+  archived_matches: CatalogEntry[];
+}
+
+export interface DraftSubmissionOptions {
+  name: string;
+  github_url?: string;
+  website_url?: string;
+  category: string;
+  description: string;
+  is_author?: boolean;
+}
+
+export interface DraftSubmissionResult {
+  duplicate: CatalogEntry | null;
+  issue_form_url: string;
+  markdown_entry: string;
+  warnings: string[];
+}

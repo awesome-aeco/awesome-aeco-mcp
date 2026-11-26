@@ -7,11 +7,19 @@ import worker from "../src/worker.js";
 import { SAMPLE_CATALOG } from "./query.test.js";
 
 function createMockFetch(): typeof fetch {
-  return (async () =>
-    new Response(JSON.stringify(SAMPLE_CATALOG), {
+  return (async (input: RequestInfo | URL) => {
+    const url = String(input);
+    if (url.endsWith("SKILL.md")) {
+      return new Response(`# Mock Skill\nLoaded from ${url}\n`, {
+        status: 200,
+        headers: { "Content-Type": "text/markdown" },
+      });
+    }
+    return new Response(JSON.stringify(SAMPLE_CATALOG), {
       status: 200,
       headers: { "Content-Type": "application/json" },
-    })) as typeof fetch;
+    });
+  }) as typeof fetch;
 }
 
 describe("MCP server tools (InMemoryTransport)", () => {
@@ -28,6 +36,8 @@ describe("MCP server tools (InMemoryTransport)", () => {
 
     const { tools } = await client.listTools();
     expect(tools.map((t) => t.name).sort()).toEqual([
+      "check_before_building",
+      "draft_submission",
       "get_movers",
       "get_tool",
       "list_categories",
@@ -78,6 +88,65 @@ describe("MCP server tools (InMemoryTransport)", () => {
     const moversText = (moversRes.content as Array<{ text: string }>)[0].text;
     expect(moversText).toContain("Fastest Growing");
     expect(moversText).toContain("IfcOpenShell");
+
+    const checkRes = await client.callTool({
+      name: "check_before_building",
+      arguments: { goal: "parse IFC files", language: "C++" },
+    });
+    const checkText = (checkRes.content as Array<{ text: string }>)[0].text;
+    expect(checkText).toContain("IfcOpenShell");
+    expect(checkText).toContain("Archived Repositories");
+    expect(checkText).toContain("OldBimTool");
+
+    const draftRes = await client.callTool({
+      name: "draft_submission",
+      arguments: {
+        name: "FreshTool",
+        github_url: "https://github.com/acme/fresh-tool",
+        category: "BIM (Building Information Modeling)",
+        description: "Open-source IFC validation CLI for CI pipelines.",
+      },
+    });
+    const draftText = (draftRes.content as Array<{ text: string }>)[0].text;
+    expect(draftText).toContain("template=suggest-resource.yml");
+    expect(draftText).toContain("*GitHub: [acme/fresh-tool](https://github.com/acme/fresh-tool)*");
+
+    const { prompts } = await client.listPrompts();
+    expect(prompts.map((p) => p.name).sort()).toEqual([
+      "add-after-you-build",
+      "find-or-build-aeco-tool",
+    ]);
+    const promptRes = await client.getPrompt({
+      name: "find-or-build-aeco-tool",
+      arguments: { goal: "IFC viewer", language: "TypeScript" },
+    });
+    expect(promptRes.messages[0].content).toMatchObject({
+      type: "text",
+    });
+
+    const addPromptRes = await client.getPrompt({
+      name: "add-after-you-build",
+      arguments: { project_name: "FreshTool" },
+    });
+    expect(addPromptRes.messages[0].content).toMatchObject({
+      type: "text",
+    });
+
+    const { resources } = await client.listResources();
+    expect(resources.map((r) => r.uri).sort()).toEqual([
+      "awesome-aeco://skills/add-after-you-build",
+      "awesome-aeco://skills/awesome-aeco",
+    ]);
+    const skillRes = await client.readResource({
+      uri: "awesome-aeco://skills/add-after-you-build",
+    });
+    expect(skillRes.contents[0]).toMatchObject({
+      uri: "awesome-aeco://skills/add-after-you-build",
+      mimeType: "text/markdown",
+    });
+    expect((skillRes.contents[0] as { text: string }).text).toContain(
+      "skills/add-after-you-build/SKILL.md"
+    );
 
     await client.close();
     await server.close();
@@ -156,6 +225,6 @@ describe("Cloudflare Worker entrypoint", () => {
     const listJson = (await listRes.json()) as {
       result: { tools: Array<{ name: string }> };
     };
-    expect(listJson.result.tools).toHaveLength(5);
+    expect(listJson.result.tools).toHaveLength(7);
   });
 });

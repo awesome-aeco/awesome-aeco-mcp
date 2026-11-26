@@ -2,6 +2,10 @@ import type {
   Catalog,
   CatalogEntry,
   CategorySummary,
+  CheckBeforeBuildingOptions,
+  CheckBeforeBuildingResult,
+  DraftSubmissionOptions,
+  DraftSubmissionResult,
   MoversOptions,
   MoversResult,
   SearchToolsOptions,
@@ -306,5 +310,195 @@ export function getMovers(
     new_entries,
     recently_updated,
     archived_count,
+  };
+}
+
+const STOP_WORDS = new Set([
+  "a",
+  "an",
+  "the",
+  "for",
+  "with",
+  "in",
+  "to",
+  "of",
+  "and",
+  "or",
+  "on",
+  "from",
+  "scratch",
+  "build",
+  "building",
+  "create",
+  "creating",
+  "write",
+  "writing",
+  "make",
+  "making",
+  "tool",
+  "library",
+  "app",
+  "need",
+  "want",
+]);
+
+function extractGoalQuery(goal: string): string {
+  const tokens = tokenize(goal).filter((t) => !STOP_WORDS.has(t));
+  return tokens.length > 0 ? tokens.join(" ") : normalize(goal);
+}
+
+export function checkBeforeBuilding(
+  catalog: Catalog,
+  options: CheckBeforeBuildingOptions
+): CheckBeforeBuildingResult {
+  const limit = Math.max(1, Math.min(20, options.limit ?? 8));
+  const goalQuery = extractGoalQuery(options.goal);
+  const langNorm = normalize(options.language);
+  const licNorm = normalize(options.license_preference);
+
+  const scored: Array<{ entry: CatalogEntry; score: number }> = [];
+  for (const entry of catalog.entries) {
+    const score = scoreEntry(entry, goalQuery);
+    if (score > 0) {
+      scored.push({ entry, score });
+    }
+  }
+
+  scored.sort((a, b) => {
+    if (b.score !== a.score) return b.score - a.score;
+    return compareByStars(a.entry, b.entry);
+  });
+
+  const archived_matches = scored
+    .filter((s) => s.entry.github?.archived)
+    .slice(0, 5)
+    .map((s) => s.entry);
+
+  const active = scored.filter((s) => !s.entry.github?.archived);
+
+  const exact_matches: CatalogEntry[] = [];
+  const adjacent_matches: CatalogEntry[] = [];
+
+  for (const item of active) {
+    const entryLang = normalize(item.entry.github?.language);
+    const entryLic = normalize(item.entry.github?.license);
+    const langOk = !langNorm || entryLang === langNorm;
+    const licOk = !licNorm || entryLic.includes(licNorm);
+
+    if (langOk && licOk && exact_matches.length < limit) {
+      exact_matches.push(item.entry);
+    } else if (adjacent_matches.length < limit) {
+      adjacent_matches.push(item.entry);
+    }
+  }
+
+  return {
+    goal: options.goal,
+    generated_at: catalog.generated_at,
+    exact_matches,
+    adjacent_matches,
+    archived_matches,
+  };
+}
+
+const GITHUB_URL_RE = /^https:\/\/github\.com\/([A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+)\/?$/;
+const ISSUE_FORM_BASE =
+  "https://github.com/awesome-aeco/Awesome-AECO/issues/new";
+
+export function draftSubmission(
+  catalog: Catalog,
+  options: DraftSubmissionOptions
+): DraftSubmissionResult {
+  const name = options.name.trim();
+  const category = options.category.trim();
+  const rawDesc = options.description.trim();
+  const description = rawDesc.endsWith(".") ? rawDesc : `${rawDesc}.`;
+  const rawGithub = (options.github_url ?? "").trim().replace(/\/+$/, "");
+  const rawWebsite = (options.website_url ?? "").trim();
+
+  const warnings: string[] = [];
+
+  if (!rawGithub && !rawWebsite) {
+    warnings.push("Provide at least one of github_url or website_url.");
+  }
+
+  let githubRepo = "";
+  if (rawGithub) {
+    const match = rawGithub.match(GITHUB_URL_RE);
+    if (match) {
+      githubRepo = match[1];
+    } else {
+      warnings.push(
+        "github_url should be a canonical repository URL like https://github.com/owner/repo."
+      );
+    }
+  }
+
+  if (
+    category &&
+    !catalog.categories.some((c) => normalize(c) === normalize(category))
+  ) {
+    warnings.push(
+      `Category "${category}" is not an existing section. Call list_categories to pick an existing section if one fits.`
+    );
+  }
+
+  const nameNorm = normalize(name);
+  const repoNorm = normalize(githubRepo);
+  const webNorm = normalize(rawWebsite).replace(/\/+$/, "");
+
+  const duplicate =
+    catalog.entries.find((e) => {
+      if (nameNorm && normalize(e.name) === nameNorm) return true;
+      if (repoNorm && normalize(e.github_repo) === repoNorm) return true;
+      if (
+        webNorm &&
+        e.website &&
+        normalize(e.website).replace(/\/+$/, "") === webNorm
+      ) {
+        return true;
+      }
+      return false;
+    }) ?? null;
+
+  const linkParts: string[] = [];
+  if (rawWebsite) {
+    let host = rawWebsite;
+    try {
+      host = new URL(rawWebsite).hostname.replace(/^www\./i, "");
+    } catch {
+      warnings.push("website_url should be a valid https:// URL.");
+    }
+    linkParts.push(`Website: [${host}](${rawWebsite})`);
+  }
+  if (rawGithub) {
+    linkParts.push(`GitHub: [${githubRepo || rawGithub}](${rawGithub})`);
+  }
+
+  const markdown_entry = [
+    `- **${name}**`,
+    `  ${description}`,
+    `  *${linkParts.join(" · ")}*`,
+  ].join("\n");
+
+  const params = new URLSearchParams({
+    template: "suggest-resource.yml",
+    title: `Add ${name}`,
+    name,
+    category,
+    description,
+    is_author:
+      options.is_author === false
+        ? "No, I am recommending someone else's project"
+        : "Yes, I am the author or a maintainer",
+  });
+  if (rawGithub) params.set("github_url", rawGithub);
+  if (rawWebsite) params.set("website_url", rawWebsite);
+
+  return {
+    duplicate,
+    issue_form_url: `${ISSUE_FORM_BASE}?${params.toString()}`,
+    markdown_entry,
+    warnings,
   };
 }

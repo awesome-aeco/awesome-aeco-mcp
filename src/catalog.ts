@@ -16,6 +16,7 @@ export class CatalogClient {
   private readonly fetchImpl: typeof fetch;
   private cached: { data: Catalog; expiresAt: number } | null = null;
   private inflight: Promise<Catalog> | null = null;
+  private textCache = new Map<string, { text: string; expiresAt: number }>();
 
   constructor(options: CatalogClientOptions = {}) {
     this.catalogUrl = options.catalogUrl ?? DEFAULT_CATALOG_URL;
@@ -43,6 +44,30 @@ export class CatalogClient {
       });
 
     return this.inflight;
+  }
+
+  async getText(url: string, forceRefresh = false): Promise<string> {
+    const now = Date.now();
+    const hit = this.textCache.get(url);
+    if (!forceRefresh && hit && now < hit.expiresAt) {
+      return hit.text;
+    }
+
+    const response = await this.fetchImpl(url, {
+      headers: {
+        Accept: "text/markdown, text/plain;q=0.9, */*;q=0.8",
+        "User-Agent": "awesome-aeco-mcp/0.1.1",
+      },
+    });
+    if (!response.ok) {
+      throw new Error(
+        `Failed to fetch resource (${response.status} ${response.statusText}) from ${url}`
+      );
+    }
+
+    const text = await response.text();
+    this.textCache.set(url, { text, expiresAt: Date.now() + this.cacheTtlMs });
+    return text;
   }
 
   private async fetchCatalog(): Promise<Catalog> {
